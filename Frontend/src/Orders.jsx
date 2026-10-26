@@ -1,21 +1,41 @@
 import { rupee } from "./config";
 
-const LABEL = { new: "Received", preparing: "Preparing", completed: "Ready" };
+const LABEL = {
+  new: "Received",
+  preparing: "Preparing",
+  completed: "Ready",
+};
 
-function OrderCard({ o, staff, onStatus }) {
+function OrderCard({ order, staff, onStatus }) {
   return (
     <div className="panel">
       <div className="row">
-        <b>#{o.id} · Screen {o.screen}, seat {o.seat}</b>
-        <span className={`pill s-${o.status}`}>{LABEL[o.status]}</span>
+        <b>#{order.id} · Screen {order.screen}, seat {order.seat}</b>
+        <span className={`pill s-${order.status}`}>
+          {LABEL[order.status] || order.status}
+        </span>
       </div>
-      <div>{o.items.map((i) => `${i.q} × ${i.n}`).join(", ")}</div>
-      {o.note && <small className="mute">Note: {o.note}</small>}
-      <div><b>{rupee(o.total)}</b></div>
-      {staff && (
+      {order.name && <div>{order.name}</div>}
+      <div>
+        {(order.items || []).map((item) =>
+          `${item.q} × ${item.n}`
+        ).join(", ")}
+      </div>
+      {order.note && <small className="mute">Note: {order.note}</small>}
+      <div><b>{rupee(order.total)}</b></div>
+      {order.created_at && (
+        <small className="mute">{new Date(order.created_at).toLocaleString()}</small>
+      )}
+      {staff && order.status !== "completed" && (
         <div className="actions">
-          <button className="ghost" onClick={() => onStatus(o.id, "preparing")}>Preparing</button>
-          <button className="ghost" onClick={() => onStatus(o.id, "completed")}>Completed</button>
+          {order.status !== "preparing" && (
+            <button className="ghost" onClick={() => onStatus(order.id, "preparing")}>
+              Preparing
+            </button>
+          )}
+          <button className="ghost" onClick={() => onStatus(order.id, "completed")}>
+            Completed
+          </button>
         </div>
       )}
     </div>
@@ -23,19 +43,21 @@ function OrderCard({ o, staff, onStatus }) {
 }
 
 export default function Orders({ orders, staff = false, onStatus }) {
-  const list = staff ? orders.filter((o) => o.status !== "completed") : orders;
+  const list = staff ? orders.filter((order) => order.status !== "completed") : orders;
   return (
     <section>
       {staff && (
         <p className="mute">
-          Demo view. In the real system this list comes from the server and updates on every counter at once.
+          Staff counter. Orders refresh automatically about every five seconds.
         </p>
       )}
       {list.length === 0 && (
-        <div className="empty">{staff ? "No open orders." : "No orders yet. Pick something from the menu."}</div>
+        <div className="empty">
+          {staff ? "No open orders." : "No orders yet. Pick something from the menu."}
+        </div>
       )}
-      {list.map((o) => (
-        <OrderCard key={o.id} o={o} staff={staff} onStatus={onStatus} />
+      {list.map((order) => (
+        <OrderCard key={order.id} order={order} staff={staff} onStatus={onStatus} />
       ))}
     </section>
   );
